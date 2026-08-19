@@ -1,1 +1,117 @@
 // Proto File
+syntax = "proto3";
+
+package rental;
+
+enum UserRole {
+    HOST = 0;
+    GUEST = 1;
+}
+
+enum PropertyStatus {
+    AVAILABLE = 0;
+    UNAVAILABLE = 1;
+}
+
+message Property {
+    string property_id = 1;
+    string name = 2;
+    string location = 3;
+    string property_type = 4;
+    float price_per_night = 5;
+    PropertyStatus status = 6;
+    string host_id = 7;
+}
+
+message User {
+    string user_id = 1;
+    string name = 2;
+    UserRole role = 3;
+}
+
+// Add Property
+message AddPropertyRequest {
+    Property property = 1;
+}
+
+message AddPropertyResponse {
+    string property_id = 1;
+}
+
+// Create Users (Client Streaming)
+message CreateUsersResponse {
+    int32 count = 1;
+    string message = 2;
+}
+
+// Update Property
+message UpdatePropertyRequest {
+    string property_id = 1;
+    Property property = 2;
+}
+
+// Remove Property
+message RemovePropertyRequest {
+    string property_id = 1;
+}
+
+message PropertyList {
+    repeated Property properties = 1;
+}
+
+// List Available Properties (Server Streaming)
+message ListAvailableRequest {
+    string location = 1;
+    float min_price = 2;
+    float max_price = 3;
+}
+
+// Search Property
+message SearchPropertyRequest {
+    string property_id = 1;
+}
+
+message SearchPropertyResponse {
+    bool found = 1;
+    string message = 2;
+    Property property = 3;
+}
+
+// Book Property
+message BookPropertyRequest {
+    string guest_name = 1;
+    string property_id = 2;
+    string check_in = 3;
+    string check_out = 4;
+}
+
+message BookPropertyResponse {
+    bool success = 1;
+    string message = 2;
+    string booking_id = 3;
+}
+
+// Confirm Booking
+message ConfirmBookingRequest {
+    string guest_name = 1;
+    string booking_id = 2;
+}
+
+message ConfirmBookingResponse {
+    bool success = 1;
+    string message = 2;
+    string booking_id = 3;
+    int32 nights = 4;
+    float total_cost = 5;
+}
+
+service RentalService {
+    rpc add_property(AddPropertyRequest) returns (AddPropertyResponse);
+    rpc create_users(stream User) returns (CreateUsersResponse);
+    rpc update_property(UpdatePropertyRequest) returns (Property);
+    rpc remove_property(RemovePropertyRequest) returns (PropertyList);
+    rpc list_available_properties(ListAvailableRequest) returns (stream Property);
+    rpc search_property(SearchPropertyRequest) returns (SearchPropertyResponse);
+    rpc book_property(BookPropertyRequest) returns (BookPropertyResponse);
+    rpc confirm_booking(ConfirmBookingRequest) returns (ConfirmBookingResponse);
+}
