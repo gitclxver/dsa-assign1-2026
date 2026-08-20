@@ -301,3 +301,17 @@ function scheduleManager() returns error? {
         io:println("Invalid Option.");
     }
 }
+
+// Search helpers.
+
+function searchAssets(string query) returns Asset[]|error {
+    Asset[] all = check apiClient->get("/assets");
+    string q = query.toLowerAscii().trim();
+    Asset[] matches = [];
+    foreach Asset a in all {
+        if a.assetTag.toLowerAscii().includes(q) || a.name.toLowerAscii().includes(q) {
+            matches.push(a);
+        }
+    }
+    return matches;
+}
