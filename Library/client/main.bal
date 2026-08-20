@@ -315,3 +315,113 @@ function searchAssets(string query) returns Asset[]|error {
     }
     return matches;
 }
+
+// Pick an asset by partial name or tag. One match auto selects.
+function chooseAsset() returns Asset?|error {
+    string query = io:readln("Search Name/Tag (Blank = All): ").trim();
+    Asset[] matches = check searchAssets(query);
+
+    if matches.length() == 0 {
+        io:println("No Matches.");
+        return ();
+    }
+    if matches.length() == 1 {
+        Asset only = matches[0];
+        io:println("Selected: [" + only.assetTag + "] " + only.name);
+        return only;
+    }
+
+    io:println("Matches:");
+    int i = 1;
+    foreach Asset a in matches {
+        io:println("  " + i.toString() + ". [" + a.assetTag + "] " + a.name + " (" + a.status + ")");
+        i += 1;
+    }
+    string pick = io:readln("Number (0 = Cancel): ").trim();
+    int|error index = int:fromString(pick);
+    if index is error || index < 1 || index > matches.length() {
+        io:println("Cancelled.");
+        return ();
+    }
+    return matches[index - 1];
+}
+
+// User views (short).
+
+function viewAllShort() returns error? {
+    Asset[] assets = check apiClient->get("/assets");
+    io:println("\n" + assets.length().toString() + " Asset(s):");
+    foreach Asset a in assets {
+        printShort(a);
+    }
+}
+
+function searchViewShort() returns error? {
+    Asset? found = check chooseAsset();
+    if found is Asset {
+        printShort(found);
+    }
+}
+
+function campusViewShort() returns error? {
+    io:println("1. Institution");
+    io:println("2. Site");
+    string sub = io:readln("Choice: ").trim();
+    if sub == "1" {
+        string inst = io:readln("Institution: ").trim();
+        Asset[] assets = check apiClient->get("/assets/institution/" + inst);
+        foreach Asset a in assets {
+            printShort(a);
+        }
+    } else if sub == "2" {
+        string site = io:readln("Site: ").trim();
+        Asset[] assets = check apiClient->get("/assets/site/" + site);
+        foreach Asset a in assets {
+            printShort(a);
+        }
+    } else {
+        io:println("Invalid Option.");
+    }
+}
+
+function loanOrBook() returns error? {
+    io:println("\nLoan / Book:");
+    Asset? selected = check chooseAsset();
+    if selected is () {
+        return;
+    }
+    Asset asset = selected;
+
+    if asset.status != "AVAILABLE" {
+        io:println("Not Available (" + asset.status + ").");
+        return;
+    }
+
+    string lname = asset.name.toLowerAscii();
+    string newStatus = (lname.includes("room") || lname.includes("lab")) ? "OCCUPIED" : "LOANED_OUT";
+    asset.status = newStatus;
+
+    http:Response res = check apiClient->put("/assets/" + asset.assetTag, asset);
+    if res.statusCode >= 200 && res.statusCode < 300 {
+        io:println("Done. " + asset.name + " Is Now " + newStatus);
+    } else {
+        io:println("Failed (Status " + res.statusCode.toString() + ").");
+    }
+}
+
+// Short overdue list. Shows schedule IDs so users can refer to them.
+function overdueDashboardShort() returns error? {
+    Asset[] assets = check apiClient->get("/assets/overdue");
+    io:println("\nOverdue (" + assets.length().toString() + "):");
+    if assets.length() == 0 {
+        io:println("  None.");
+        return;
+    }
+    foreach Asset a in assets {
+        printShort(a);
+        Schedule[] schedules = a.schedules ?: [];
+        foreach Schedule s in schedules {
+            io:println("      ID " + s.scheduleId + " | Due " + s.dueDate);
+        }
+    }
+}
