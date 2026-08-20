@@ -47,3 +47,38 @@ public type Asset record {
     Schedule[] schedules?;
     WorkOrder[] workOrders?;
 };
+
+// Main menu.
+
+public function main() returns error? {
+    io:println("Library & Resource Management CLI");
+
+    // Auto seed data for the system.
+    io:println("\nSeeding Demo Data");
+    error? seedResult = seedDemoData();
+    if seedResult is error {
+        io:println("Seed Failed: " + seedResult.message());
+    } else {
+        io:println("Items Seeded Successfully!");
+    }
+
+    boolean running = true;
+    while running {
+        io:println("\nMAIN MENU");
+        io:println("1. User CLI");
+        io:println("2. Admin CLI");
+        io:println("0. Exit");
+
+        string choice = io:readln("Choice: ").trim();
+        if choice == "1" {
+            userMenu();
+        } else if choice == "2" {
+            adminMenu();
+        } else if choice == "0" {
+            running = false;
+            io:println("Goodbye!");
+        } else {
+            io:println("Invalid Choice.");
+        }
+    }
+}
