@@ -425,3 +425,125 @@ function overdueDashboardShort() returns error? {
         }
     }
 }
+
+// Admin views (full).
+
+function viewAllFull() returns error? {
+    Asset[] assets = check apiClient->get("/assets");
+    io:println("\n" + assets.length().toString() + " Asset(s) [Full]:");
+    foreach Asset a in assets {
+        printFull(a);
+        io:println("");
+    }
+}
+
+// Seed data (admin and auto on startup).
+
+function seedDemoData() returns error? {
+    Asset[] demo = [
+        {
+            assetTag: "NUST-LIB-3DP-001",
+            name: "Pro Series 3D Printer",
+            description: "High Precision Laboratory Printer.",
+            institution: "Namibia University Of Science And Technology",
+            site: "Main Campus Innovation Lab",
+            status: "AVAILABLE",
+            dateAcquired: "2024-03-10"
+        },
+        {
+            assetTag: "NUST-LIB-LAP-002",
+            name: "Dell Latitude Laptop",
+            description: "Loanable Student Laptop.",
+            institution: "Namibia University Of Science And Technology",
+            site: "Main Campus Library",
+            status: "AVAILABLE",
+            dateAcquired: "2023-08-01"
+        },
+        {
+            assetTag: "UNAM-ROOM-LAB-001",
+            name: "Computer Lab A",
+            description: "Bookable Computer Lab (30 Seats).",
+            institution: "University Of Namibia",
+            site: "Windhoek Campus",
+            status: "AVAILABLE",
+            dateAcquired: "2022-01-15"
+        },
+        {
+            assetTag: "NUST-LIB-PROJ-003",
+            name: "Epson Projector",
+            description: "Portable Projector For Lecture Rooms.",
+            institution: "Namibia University Of Science And Technology",
+            site: "Main Campus Library",
+            status: "AVAILABLE",
+            dateAcquired: "2023-02-20"
+        },
+        {
+            assetTag: "UNAM-LIB-BOOK-004",
+            name: "Reference Encyclopedia Set",
+            description: "Non Loanable Reference Material.",
+            institution: "University Of Namibia",
+            site: "Windhoek Campus Library",
+            status: "LOANED_OUT",
+            dateAcquired: "2021-11-05"
+        },
+        {
+            assetTag: "NUST-ENG-OSC-005",
+            name: "Digital Oscilloscope",
+            description: "Electronics Lab Measuring Device.",
+            institution: "Namibia University Of Science And Technology",
+            site: "Engineering Campus Lab 2",
+            status: "AVAILABLE",
+            dateAcquired: "2024-06-18"
+        }
+    ];
+
+    foreach Asset asset in demo {
+        http:Response res = check apiClient->post("/assets", asset);
+        io:println("  " + asset.assetTag + ": " + res.statusCode.toString());
+    }
+
+    // Seed schedules with fixed IDs.
+    check addScheduleQuietly("NUST-LIB-LAP-002",
+        {scheduleId: "SCH001", 'type: "MAINTENANCE", dueDate: "2024-01-15", description: "Annual Service (Overdue)"});
+    check addScheduleQuietly("UNAM-ROOM-LAB-001",
+        {scheduleId: "SCH002", 'type: "BOOKING", dueDate: "2024-05-20", description: "Booking Return (Overdue)"});
+    check addScheduleQuietly("NUST-ENG-OSC-005",
+        {scheduleId: "SCH003", 'type: "MAINTENANCE", dueDate: "2023-09-30", description: "Calibration (Overdue)"});
+    check addScheduleQuietly("NUST-LIB-3DP-001",
+        {scheduleId: "SCH004", 'type: "MAINTENANCE", dueDate: "2030-12-01", description: "Future Calibration"});
+
+    io:println("Seed Done.");
+}
+
+function addScheduleQuietly(string tag, Schedule schedule) returns error? {
+    http:Response _ = check apiClient->post("/assets/" + tag + "/schedules", schedule);
+}
+
+// Print helpers.
+
+// Short line for users: tag, name, status.
+function printShort(Asset a) {
+    io:println("  [" + a.assetTag + "] " + a.name + " | " + a.status);
+}
+
+// Full details for admins.
+function printFull(Asset a) {
+    io:println("  Tag:         " + a.assetTag);
+    io:println("  Name:        " + a.name);
+    io:println("  Description: " + a.description);
+    io:println("  Institution: " + a.institution);
+    io:println("  Site:        " + a.site);
+    io:println("  Status:      " + a.status);
+    io:println("  Acquired:    " + a.dateAcquired);
+    Schedule[] schedules = a.schedules ?: [];
+    if schedules.length() > 0 {
+        io:println("  Schedules:");
+        foreach Schedule s in schedules {
+            io:println("    [" + s.scheduleId + "] " + s.'type + " Due " + s.dueDate + ": " + s.description);
+        }
+    }
+}
+
+function pause() {
+    _ = io:readln("\nPress Enter To Return... ");
+}
