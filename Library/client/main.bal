@@ -248,3 +248,56 @@ function toggleStatus() returns error? {
         io:println("Save Failed (Status " + res.statusCode.toString() + ").");
     }
 }
+
+// Admin schedule manager. Schedule IDs are auto generated.
+
+function scheduleManager() returns error? {
+    io:println("\nSchedule Manager:");
+    Asset? selected = check chooseAsset();
+    if selected is () {
+        return;
+    }
+    string tag = selected.assetTag;
+
+    // Show existing schedules with IDs so admin can remove them easily.
+    Schedule[] existing = selected.schedules ?: [];
+    if existing.length() > 0 {
+        io:println("Existing Schedules:");
+        foreach Schedule s in existing {
+            io:println("  [" + s.scheduleId + "] " + s.'type + " Due " + s.dueDate + ": " + s.description);
+        }
+    } else {
+        io:println("No Schedules On This Asset Yet.");
+    }
+
+    io:println("\n1. Add Schedule");
+    io:println("2. Remove Schedule");
+    string sub = io:readln("Choice: ").trim();
+
+    if sub == "1" {
+        // Auto generate a short unique ID and show it.
+        string sid = "SCH" + uuid:createType1AsString().substring(0, 8).toUpperAscii();
+        Schedule schedule = {
+            scheduleId: sid,
+            'type: io:readln("Type (MAINTENANCE / BOOKING): ").trim(),
+            dueDate: io:readln("Due Date (YYYY-MM-DD): ").trim(),
+            description: io:readln("Description: ").trim()
+        };
+        http:Response res = check apiClient->post("/assets/" + tag + "/schedules", schedule);
+        if res.statusCode >= 200 && res.statusCode < 300 {
+            io:println("Schedule Added. ID: " + sid);
+        } else {
+            io:println("Add Failed (Status " + res.statusCode.toString() + ").");
+        }
+    } else if sub == "2" {
+        string sid = io:readln("Schedule ID To Remove: ").trim();
+        http:Response res = check apiClient->delete("/assets/" + tag + "/schedules/" + sid);
+        if res.statusCode >= 200 && res.statusCode < 300 {
+            io:println("Removed Schedule " + sid);
+        } else {
+            io:println("Remove Failed (Status " + res.statusCode.toString() + ").");
+        }
+    } else {
+        io:println("Invalid Option.");
+    }
+}
