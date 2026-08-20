@@ -124,3 +124,55 @@ function runUserAction(string choice) returns error? {
     }
     io:println("Invalid Choice.");
 }
+
+// Admin CLI.
+
+function adminMenu() {
+    string password = io:readln("Admin Password: ").trim();
+    if password != ADMIN_PASSWORD {
+        io:println("Wrong Password.");
+        return;
+    }
+    io:println("Admin Access Granted.");
+
+    boolean running = true;
+    while running {
+        io:println("\nADMIN MENU");
+        io:println("1. Manual Seed Demo Data");
+        io:println("2. Add New Asset");
+        io:println("3. Delete Asset");
+        io:println("4. View All (Full Details)");
+        io:println("5. Schedule Manager");
+        io:println("6. Set Status (A / U)");
+        io:println("0. Back");
+
+        string choice = io:readln("Choice: ").trim();
+        if choice == "0" {
+            running = false;
+            continue;
+        }
+
+        error? result = runAdminAction(choice);
+        if result is error {
+            io:println("Error: " + result.message());
+        }
+        pause();
+    }
+}
+
+function runAdminAction(string choice) returns error? {
+    if choice == "1" {
+        return seedDemoData();
+    } else if choice == "2" {
+        return addAssetInteractive();
+    } else if choice == "3" {
+        return deleteAssetInteractive();
+    } else if choice == "4" {
+        return viewAllFull();
+    } else if choice == "5" {
+        return scheduleManager();
+    } else if choice == "6" {
+        return toggleStatus();
+    }
+    io:println("Invalid Choice.");
+}
