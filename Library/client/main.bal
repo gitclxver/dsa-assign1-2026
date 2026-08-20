@@ -212,3 +212,39 @@ function deleteAssetInteractive() returns error? {
         io:println("Delete Failed (Status " + res.statusCode.toString() + ").");
     }
 }
+
+// Set status with one letter keys: a = AVAILABLE, u = UNAVAILABLE.
+function toggleStatus() returns error? {
+    io:println("\nSet Status:");
+    Asset? selected = check chooseAsset();
+    if selected is () {
+        return;
+    }
+    Asset asset = selected;
+
+    io:println("Asset: [" + asset.assetTag + "] " + asset.name);
+    io:println("Current Status: " + asset.status);
+    io:println("  A = AVAILABLE");
+    io:println("  U = UNAVAILABLE");
+    io:println("  0 = Cancel");
+
+    string key = io:readln("Key: ").trim().toLowerAscii();
+    if key == "0" {
+        io:println("Cancelled.");
+        return;
+    } else if key == "a" {
+        asset.status = "AVAILABLE";
+    } else if key == "u" {
+        asset.status = "UNAVAILABLE";
+    } else {
+        io:println("Unknown Key. Use A Or U.");
+        return;
+    }
+
+    http:Response res = check apiClient->put("/assets/" + asset.assetTag, asset);
+    if res.statusCode >= 200 && res.statusCode < 300 {
+        io:println("Saved. Status Is Now " + asset.status + ".");
+    } else {
+        io:println("Save Failed (Status " + res.statusCode.toString() + ").");
+    }
+}
