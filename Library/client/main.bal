@@ -82,3 +82,45 @@ public function main() returns error? {
         }
     }
 }
+
+// User CLI.
+
+function userMenu() {
+    boolean running = true;
+    while running {
+        io:println("\nUSER MENU");
+        io:println("1. View All");
+        io:println("2. Search");
+        io:println("3. Filter (Institution / Site)");
+        io:println("4. Loan / Book");
+        io:println("5. Overdue List");
+        io:println("0. Back");
+
+        string choice = io:readln("Choice: ").trim();
+        if choice == "0" {
+            running = false;
+            continue;
+        }
+
+        error? result = runUserAction(choice);
+        if result is error {
+            io:println("Error: " + result.message());
+        }
+        pause();
+    }
+}
+
+function runUserAction(string choice) returns error? {
+    if choice == "1" {
+        return viewAllShort();
+    } else if choice == "2" {
+        return searchViewShort();
+    } else if choice == "3" {
+        return campusViewShort();
+    } else if choice == "4" {
+        return loanOrBook();
+    } else if choice == "5" {
+        return overdueDashboardShort();
+    }
+    io:println("Invalid Choice.");
+}
