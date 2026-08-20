@@ -176,3 +176,39 @@ function runAdminAction(string choice) returns error? {
     }
     io:println("Invalid Choice.");
 }
+
+// Admin add and delete helpers.
+
+function addAssetInteractive() returns error? {
+    io:println("\nAdd Asset:");
+    Asset asset = {
+        assetTag: io:readln("Tag: ").trim(),
+        name: io:readln("Name: ").trim(),
+        description: io:readln("Description: ").trim(),
+        institution: io:readln("Institution: ").trim(),
+        site: io:readln("Site: ").trim(),
+        status: "AVAILABLE",
+        dateAcquired: io:readln("Date Acquired (YYYY-MM-DD): ").trim()
+    };
+
+    http:Response res = check apiClient->post("/assets", asset);
+    if res.statusCode == 201 {
+        io:println("Added [" + asset.assetTag + "] " + asset.name);
+    } else {
+        io:println("Failed (Status " + res.statusCode.toString() + "). Tag Already Exist.");
+    }
+}
+
+function deleteAssetInteractive() returns error? {
+    io:println("\nDelete Asset:");
+    Asset? selected = check chooseAsset();
+    if selected is () {
+        return;
+    }
+    http:Response res = check apiClient->delete("/assets/" + selected.assetTag);
+    if res.statusCode >= 200 && res.statusCode < 300 {
+        io:println("Deleted [" + selected.assetTag + "] " + selected.name);
+    } else {
+        io:println("Delete Failed (Status " + res.statusCode.toString() + ").");
+    }
+}
