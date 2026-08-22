@@ -9,7 +9,6 @@ final http:Client apiClient = check new ("http://localhost:8081/api");
 const string ADMIN_PASSWORD = "admin123";
 
 // Data models
-
 public type Component record {
     string compId;
     string name;
@@ -101,6 +100,7 @@ function userMenu() {
             running = false;
             continue;
         }
+
 
         error? result = runUserAction(choice);
         if result is error {
@@ -503,6 +503,7 @@ function seedDemoData() returns error? {
     }
 
     // Seed schedules with fixed IDs.
+
     check addScheduleQuietly("NUST-LIB-LAP-002",
         {scheduleId: "SCH001", 'type: "MAINTENANCE", dueDate: "2024-01-15", description: "Annual Service (Overdue)"});
     check addScheduleQuietly("UNAM-ROOM-LAB-001",
