@@ -10,7 +10,7 @@ public type Component record {
 
 public type Schedule record {
     string scheduleId;
-    string 'type;  //What is this all about
+    string 'type; 
     string dueDate;
     string description;
 };
