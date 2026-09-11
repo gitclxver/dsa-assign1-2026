@@ -38,6 +38,50 @@ public function main() returns error? {
     }
 }
 
+
+// User CLI: browse, search, book, confirm.
+
+function userMenu() {
+    boolean running = true;
+    while running {
+        io:println("\nUSER MENU");
+        io:println("1. List Available Properties");
+        io:println("2. Search Property");
+        io:println("3. Book Property");
+        io:println("4. Confirm Booking");
+        io:println("0. Back");
+
+        string choice = io:readln("Choice: ").trim();
+        if choice == "0" {
+            running = false;
+            continue;
+        }
+
+        error? result = runUserAction(choice);
+        if result is error {
+            io:println("Error: " + result.message());
+        }
+        pause();
+    }
+}
+
+
+
+function runUserAction(string choice) returns error? {
+    if choice == "1" {
+        return listAvailableUI();
+    } else if choice == "2" {
+        return searchUI();
+    } else if choice == "3" {
+        return bookUI();
+    } else if choice == "4" {
+        return confirmUI();
+    }
+    io:println("Invalid Choice.");
+}
+
+
+
 // Admin CLI: CRUD and seed.
 
 function adminMenu() {
@@ -192,6 +236,142 @@ function listAvailableUI() returns error? {
         };
     io:println("Total Available: " + count.toString());
 }
+
+// Load all available properties into an array.
+function loadAvailable() returns Property[]|error {
+    stream<Property, grpc:Error?> propStream = check ep->list_available_properties({location: "", min_price: 0.0, max_price: 0.0});
+    Property[] all = [];
+    check from Property p in propStream
+        do {
+            all.push(p);
+        };
+    return all;
+}
+
+// Case insensitive match on id or name. Blank query returns all.
+function filterProperties(Property[] all, string query) returns Property[] {
+    string q = query.toLowerAscii().trim();
+    Property[] matches = [];
+    foreach Property p in all {
+        if q == ""
+            || p.property_id.toLowerAscii().includes(q)
+            || p.name.toLowerAscii().includes(q)
+            || p.location.toLowerAscii().includes(q) {
+            matches.push(p);
+        }
+    }
+    return matches;
+}
+
+// Pick a property by name or id. One match auto selects.
+function chooseProperty() returns Property?|error {
+    string query = io:readln("Search Name/Id (Blank = All): ").trim();
+    Property[] matches = filterProperties(check loadAvailable(), query);
+
+    if matches.length() == 0 {
+        io:println("No Matches.");
+        return ();
+    }
+    if matches.length() == 1 {
+        Property only = matches[0];
+        io:println("Selected: [" + only.property_id + "] " + only.name);
+        return only;
+    }
+
+    io:println("Matches:");
+    int i = 1;
+    foreach Property p in matches {
+        io:println("  " + i.toString() + ". [" + p.property_id + "] " + p.name + " (" + p.status + ")");
+        i += 1;
+    }
+    string pick = io:readln("Number (0 = Cancel): ").trim();
+    int|error index = int:fromString(pick);
+    if index is error || index < 1 || index > matches.length() {
+        io:println("Cancelled.");
+        return ();
+    }
+    return matches[index - 1];
+}
+
+// User: search by name or id (case insensitive).
+
+function searchUI() returns error? {
+    io:println("\nSearch Property:");
+    Property? found = check chooseProperty();
+    if found is Property {
+        printProperty(found);
+    }
+}
+
+// User: book property using Guest Name.
+
+function bookUI() returns error? {
+    io:println("\nBook Property:");
+    Property? selected = check chooseProperty();
+    if selected is () {
+        return;
+    }
+
+    string guestName = io:readln("Guest Name: ").trim();
+    string checkIn = io:readln("Check In (YYYY-MM-DD): ").trim();
+    string checkOut = io:readln("Check Out (YYYY-MM-DD): ").trim();
+
+    if !isValidDate(checkIn) || !isValidDate(checkOut) {
+        io:println("Invalid Date. Use YYYY-MM-DD (Example: 2026-07-26).");
+        return;
+    }
+    if checkOut <= checkIn {
+        io:println("Check Out Date Must Be After Check In Date.");
+        return;
+    }
+
+    BookPropertyRequest req = {
+        guest_name: guestName,
+        property_id: selected.property_id,
+        check_in: checkIn,
+        check_out: checkOut
+    };
+    BookPropertyResponse res = check ep->book_property(req);
+    io:println(res.message + (res.booking_id != "" ? " (Booking Id: " + res.booking_id + ")" : ""));
+}
+
+// User: confirm booking using the same Guest Name.
+
+function confirmUI() returns error? {
+    io:println("\nConfirm Booking:");
+    ConfirmBookingRequest req = {
+        guest_name: io:readln("Guest Name: ").trim(),
+        booking_id: io:readln("Booking Id: ").trim()
+    };
+    ConfirmBookingResponse res = check ep->confirm_booking(req);
+    io:println(res.message);
+    if res.success {
+        io:println(string `  ${res.nights} Night(s), Total Cost: $${res.total_cost}`);
+    }
+}
+
+// True when date looks like YYYY-MM-DD.
+function isValidDate(string date) returns boolean {
+    string d = date.trim();
+    if d.length() != 10 {
+        return false;
+    }
+    if d.substring(4, 5) != "-" || d.substring(7, 8) != "-" {
+        return false;
+    }
+    // Year, month, day must be digits.
+    string y = d.substring(0, 4);
+    string m = d.substring(5, 7);
+    string day = d.substring(8, 10);
+    int|error yi = int:fromString(y);
+    int|error mi = int:fromString(m);
+    int|error di = int:fromString(day);
+    if yi is error || mi is error || di is error {
+        return false;
+    }
+    return mi >= 1 && mi <= 12 && di >= 1 && di <= 31;
+}
+
 
 // Seed demo properties (startup and admin).
 
