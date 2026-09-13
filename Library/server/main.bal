@@ -12,7 +12,7 @@ service /api on httpListener {
     // Asset CRUD.
 
     // Create asset
-   /** resource function post assets(db:Asset asset) returns http:Created|http:Conflict {
+    resource function post assets(db:Asset asset) returns http:Created|http:Conflict {
         db:Asset|error created = repo.createAsset(asset);
         if created is error {
             return <http:Conflict>{body: {message: created.message(), assetTag: asset.assetTag}};
@@ -90,3 +90,4 @@ service /api on httpListener {
         }
         return <http:Ok>{body: {message: "Component removed successfully", asset: result}};
     }
+}
