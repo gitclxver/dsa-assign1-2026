@@ -1,7 +1,8 @@
 import ballerina/log;
 import ballerina/time;
 
-// Data Recods
+// Data models
+
 public type Component record {
     string compId;
     string name;
@@ -10,7 +11,7 @@ public type Component record {
 
 public type Schedule record {
     string scheduleId;
-    string 'type; 
+    string 'type;
     string dueDate;
     string description;
 };
@@ -51,7 +52,7 @@ public const WORKORDER_NOT_FOUND = "WorkOrderNotFound";
 public const INSTITUTION_NOT_FOUND = "InstitutionNotFound";
 public const INSTITUTION_ALREADY_EXISTS = "InstitutionAlreadyExists";
 
-
+// Repository with in memory map database, assetTag is the key
 
 public class LibraryRepository {
 
@@ -149,7 +150,7 @@ public class LibraryRepository {
 
     // Overdue: any schedule whose dueDate has passed (dueDate before today).
     // utcToString() gives an ISO date, so the first 10 characters are the date
-    // we can compare against the schedule dueDate.
+    // we compare against the schedule dueDate.
     public function getOverdueAssets() returns Asset[] {
         string today = time:utcToString(time:utcNow()).substring(0, 10);
         Asset[] result = [];
@@ -301,4 +302,3 @@ public class LibraryRepository {
         return self.institutions.keys();
     }
 }
-

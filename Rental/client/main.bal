@@ -9,10 +9,9 @@ const string ADMIN_PASSWORD = "admin123";
 // Main menu.
 
 public function main() returns error? {
-    io:println("Rental Accommodation gRPC Client (Admin Only)");
+    io:println("Rental Accommodation gRPC Client");
 
-    // Auto seed demo properties before the menus.
-    io:println("\nSeeding Demo Data");
+    // Auto seed demo properties before the menu appears.
     error? seedResult = seedDemo();
     if seedResult is error {
         io:println("Seed Failed: " + seedResult.message());
@@ -23,21 +22,23 @@ public function main() returns error? {
     boolean running = true;
     while running {
         io:println("\nMAIN MENU");
-        io:println("1. Admin CLI");
+        io:println("1. User CLI");
+        io:println("2. Admin CLI");
         io:println("0. Exit");
 
         string choice = io:readln("Choice: ").trim();
         if choice == "1" {
+            userMenu();
+        } else if choice == "2" {
             adminMenu();
         } else if choice == "0" {
             running = false;
-            io:println("Goodbye!");
+            io:println("Exiting!");
         } else {
             io:println("Invalid Choice.");
         }
     }
 }
-
 
 // User CLI: browse, search, book, confirm.
 
@@ -65,8 +66,6 @@ function userMenu() {
     }
 }
 
-
-
 function runUserAction(string choice) returns error? {
     if choice == "1" {
         return listAvailableUI();
@@ -79,8 +78,6 @@ function runUserAction(string choice) returns error? {
     }
     io:println("Invalid Choice.");
 }
-
-
 
 // Admin CLI: CRUD and seed.
 
@@ -146,8 +143,6 @@ function addPropertyUI() returns error? {
         status: AVAILABLE,
         host_id: io:readln("Host Id: ").trim()
     };
-    // property_id is left unset here because the server generates it and
-    // returns it inside AddPropertyResponse — the client never assigns its own ID.
     AddPropertyResponse res = check ep->add_property({property: property});
     io:println("Created Property With Id: " + res.property_id);
 }
@@ -156,8 +151,6 @@ function addPropertyUI() returns error? {
 
 function createUsersUI() returns error? {
     io:println("\nCreate Users:");
-    // Opens a client-streaming call: the server won't send a response until
-    // we explicitly call complete(), so we can push multiple users first.
     Create_usersStreamingClient sClient = check ep->create_users();
     boolean adding = true;
     while adding {
@@ -171,8 +164,6 @@ function createUsersUI() returns error? {
             check sClient->sendUser({user_id: uid, name: name, role: role});
         }
     }
-    // Signals to the server that no more users are coming, so it can
-    // process the batch and send back a single summary response.
     check sClient->complete();
     CreateUsersResponse? response = check sClient->receiveCreateUsersResponse();
     if response is CreateUsersResponse {
@@ -194,8 +185,6 @@ function updatePropertyUI() returns error? {
         status: io:readln("Status (AVAILABLE/UNAVAILABLE): ").trim().toUpperAscii() == "UNAVAILABLE" ? UNAVAILABLE : AVAILABLE,
         host_id: io:readln("Host Id: ").trim()
     };
-    // update_property returns the updated Property directly (not wrapped in
-    // a response record), so we branch on grpc:Error instead of checking a success flag.
     Property|grpc:Error updated = ep->update_property({property_id: id, property: property});
     if updated is grpc:Error {
         io:println("Error: " + updated.message());
@@ -220,13 +209,11 @@ function removePropertyUI() returns error? {
     }
 }
 
-// List available properties (admin).
+// List available properties (user and admin).
 
 function listAvailableUI() returns error? {
     io:println("\nList Available Properties:");
     string location = io:readln("Filter By Location (Blank = All): ").trim();
-    // list_available_properties is server-side streaming: it returns a stream
-    // immediately and results arrive one at a time as the server produces them.
     stream<Property, grpc:Error?> propStream = check ep->list_available_properties({location: location, min_price: 0.0, max_price: 0.0});
     int count = 0;
     check from Property p in propStream
@@ -372,20 +359,19 @@ function isValidDate(string date) returns boolean {
     return mi >= 1 && mi <= 12 && di >= 1 && di <= 31;
 }
 
-
-// Seed demo properties (startup and admin).
+// Seed data
 
 function seedDemo() returns error? {
     Property[] demo = [
         {name: "Seaside Villa", location: "Swakopmund", property_type: "House", price_per_night: 1200.0, status: AVAILABLE, host_id: "H1"},
         {name: "City Apartment", location: "Windhoek", property_type: "Apartment", price_per_night: 650.0, status: AVAILABLE, host_id: "H1"},
-        {name: "Desert Lodge Room", location: "Sossusvlei", property_type: "Room", price_per_night: 900.0, status: AVAILABLE, host_id: "H2"}
+        {name: "Desert Lodge Room", location: "Sossusvlei", property_type: "Room", price_per_night: 900.0, status: AVAILABLE, host_id: "H2"},
+        {name: "Ensuite Lodge Room", location: "Windhoek", property_type: "Room", price_per_night: 500.0, status: "UNAVAILABLE", host_id: "H2"}
     ];
     foreach Property p in demo {
         AddPropertyResponse res = check ep->add_property({property: p});
         io:println("  Seeded " + res.property_id + ": " + p.name);
     }
-    io:println("Seed Done.");
 }
 
 function printProperty(Property p) {
@@ -393,5 +379,5 @@ function printProperty(Property p) {
 }
 
 function pause() {
-    _ = io:readln("\nPress Enter To Return... ");
+    _ = io:readln("\nPress Enter");
 }

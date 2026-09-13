@@ -4,18 +4,18 @@ Two systems in Ballerina. Data is in memory so you only need Ballerina.
 
 Library-Management
 REST API on port 8081 plus a CLI client.
-cd Library-Management/server
+cd Library/server
 bal run
 Then in another terminal:
-cd Library-Management/client
+cd Library/client
 bal run
 
 Rental-Accommodation
 gRPC service on port 9090 plus a CLI client.
-cd Rental-Accommodation/server
+cd Rental/server
 bal run
 Then in another terminal:
-cd Rental-Accommodation/client
+cd Rental/client
 bal run
 User CLI: list, search, book, confirm.
 Admin CLI (password admin123): seed, add, create users, update, delete.
