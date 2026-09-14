@@ -2,13 +2,14 @@ import ballerina/http;
 import ballerina/io;
 import ballerina/uuid;
 
-// Talks to the REST API (server must be running on port 8081).
+// Talks to the REST API
 final http:Client apiClient = check new ("http://localhost:8081/api");
 
 // Simple admin password for demo purposes.
 const string ADMIN_PASSWORD = "admin123";
 
 // Data models
+
 public type Component record {
     string compId;
     string name;
@@ -100,7 +101,6 @@ function userMenu() {
             running = false;
             continue;
         }
-
 
         error? result = runUserAction(choice);
         if result is error {
@@ -195,7 +195,7 @@ function addAssetInteractive() returns error? {
     if res.statusCode == 201 {
         io:println("Added [" + asset.assetTag + "] " + asset.name);
     } else {
-        io:println("Failed (Status " + res.statusCode.toString() + "). Tag Already Exist.");
+        io:println("Failed to Insert. Tag Already Exist.");
     }
 }
 
@@ -426,7 +426,7 @@ function overdueDashboardShort() returns error? {
     }
 }
 
-// Admin views (full).
+// Admin view
 
 function viewAllFull() returns error? {
     Asset[] assets = check apiClient->get("/assets");
@@ -440,9 +440,10 @@ function viewAllFull() returns error? {
 // Seed data (admin and auto on startup).
 
 function seedDemoData() returns error? {
+    // Seed data 
     Asset[] demo = [
         {
-            assetTag: "NUST-LIB-3DP-001",
+            assetTag: "3DP-001",
             name: "Pro Series 3D Printer",
             description: "High Precision Laboratory Printer.",
             institution: "Namibia University Of Science And Technology",
@@ -451,7 +452,7 @@ function seedDemoData() returns error? {
             dateAcquired: "2024-03-10"
         },
         {
-            assetTag: "NUST-LIB-LAP-002",
+            assetTag: "LAP-001",
             name: "Dell Latitude Laptop",
             description: "Loanable Student Laptop.",
             institution: "Namibia University Of Science And Technology",
@@ -460,7 +461,7 @@ function seedDemoData() returns error? {
             dateAcquired: "2023-08-01"
         },
         {
-            assetTag: "UNAM-ROOM-LAB-001",
+            assetTag: "LAB-001",
             name: "Computer Lab A",
             description: "Bookable Computer Lab (30 Seats).",
             institution: "University Of Namibia",
@@ -469,7 +470,7 @@ function seedDemoData() returns error? {
             dateAcquired: "2022-01-15"
         },
         {
-            assetTag: "NUST-LIB-PROJ-003",
+            assetTag: "PROJ-001",
             name: "Epson Projector",
             description: "Portable Projector For Lecture Rooms.",
             institution: "Namibia University Of Science And Technology",
@@ -478,7 +479,7 @@ function seedDemoData() returns error? {
             dateAcquired: "2023-02-20"
         },
         {
-            assetTag: "UNAM-LIB-BOOK-004",
+            assetTag: "BOOK-001",
             name: "Reference Encyclopedia Set",
             description: "Non Loanable Reference Material.",
             institution: "University Of Namibia",
@@ -487,7 +488,7 @@ function seedDemoData() returns error? {
             dateAcquired: "2021-11-05"
         },
         {
-            assetTag: "NUST-ENG-OSC-005",
+            assetTag: "OSC-001",
             name: "Digital Oscilloscope",
             description: "Electronics Lab Measuring Device.",
             institution: "Namibia University Of Science And Technology",
@@ -497,23 +498,22 @@ function seedDemoData() returns error? {
         }
     ];
 
+    // Post for loop for each asset
     foreach Asset asset in demo {
         http:Response res = check apiClient->post("/assets", asset);
         io:println("  " + asset.assetTag + ": " + res.statusCode.toString());
     }
 
-    // Seed schedules with fixed IDs.
-
-    check addScheduleQuietly("NUST-LIB-LAP-002",
+    // Seed schedules
+    check addScheduleQuietly("LAP-001",
         {scheduleId: "SCH001", 'type: "MAINTENANCE", dueDate: "2024-01-15", description: "Annual Service (Overdue)"});
-    check addScheduleQuietly("UNAM-ROOM-LAB-001",
+    check addScheduleQuietly("LAB-001",
         {scheduleId: "SCH002", 'type: "BOOKING", dueDate: "2024-05-20", description: "Booking Return (Overdue)"});
-    check addScheduleQuietly("NUST-ENG-OSC-005",
+    check addScheduleQuietly("OSC-005",
         {scheduleId: "SCH003", 'type: "MAINTENANCE", dueDate: "2023-09-30", description: "Calibration (Overdue)"});
-    check addScheduleQuietly("NUST-LIB-3DP-001",
+    check addScheduleQuietly("3DP-001",
         {scheduleId: "SCH004", 'type: "MAINTENANCE", dueDate: "2030-12-01", description: "Future Calibration"});
 
-    io:println("Seed Done.");
 }
 
 function addScheduleQuietly(string tag, Schedule schedule) returns error? {
@@ -521,8 +521,6 @@ function addScheduleQuietly(string tag, Schedule schedule) returns error? {
 }
 
 // Print helpers.
-
-// Short line for users: tag, name, status.
 function printShort(Asset a) {
     io:println("  [" + a.assetTag + "] " + a.name + " | " + a.status);
 }
@@ -546,5 +544,5 @@ function printFull(Asset a) {
 }
 
 function pause() {
-    _ = io:readln("\nPress Enter To Return... ");
+    _ = io:readln("\nPress Enter");
 }

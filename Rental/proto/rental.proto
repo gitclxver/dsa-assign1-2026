@@ -1,4 +1,3 @@
-// Proto File
 syntax = "proto3";
 
 package rental;

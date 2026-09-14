@@ -3,10 +3,10 @@ DSA Assignment 1 Setup
 You only need Ballerina. Data is stored in memory (no database, no Docker).
 
 Folders:
-Library-Management = REST API + CLI (port 8081)
-Rental-Accommodation = gRPC + CLI (port 9090)
+Library = REST API + CLI (port 8081)
+Rental= gRPC + CLI (port 9090)
 
-Install Ballerina 2201.12.9 from https://ballerina.io/downloads/
+Install Ballerina >= 2201.12.9 from https://ballerina.io/downloads/
 Then check:
 bal version
 
@@ -16,11 +16,11 @@ Run every command from inside the package folder.
 Question 1 Library Management
 
 Terminal 1:
-cd Library-Management/server
+cd Library/server
 bal run
 
 Terminal 2:
-cd Library-Management/client
+cd Library/client
 bal run
 
 The client seeds data on startup. Use User CLI or Admin CLI (password admin123).
@@ -29,11 +29,11 @@ The client seeds data on startup. Use User CLI or Admin CLI (password admin123).
 Question 2 Rental Accommodation
 
 Terminal 1:
-cd Rental-Accommodation/server
+cd Rental/server
 bal run
 
 Terminal 2:
-cd Rental-Accommodation/client
+cd Rental/client
 bal run
 
 The client seeds data on startup.
