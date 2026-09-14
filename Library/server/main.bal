@@ -91,7 +91,7 @@ service /api on httpListener {
         return <http:Ok>{body: {message: "Component removed successfully", asset: result}};
     }
 
-    // Schedules.
+   // Schedules.
 
     resource function post assets/[string assetTag]/schedules(db:Schedule schedule) returns http:Ok|http:NotFound {
         db:Asset|error updated = repo.addSchedule(assetTag, schedule);
@@ -157,3 +157,4 @@ service /api on httpListener {
         return <http:Ok>{body: {message: "Institution removed successfully", institution: name}};
     }
 }
+
